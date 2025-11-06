@@ -56,22 +56,32 @@ export default function PostDetail() {
 
   const fetchPost = async () => {
     try {
-      const response = await fetch(`/api/posts/${params.slug}`)
-      if (response.ok) {
-        const data = await response.json()
-        setPost(data.post)
-        setComments(data.post.comments)
-        setLikeCount(data.post._count.likes)
+      // First find the post by slug
+      const postsResponse = await fetch('/api/posts?published=true')
+      if (postsResponse.ok) {
+        const postsData = await postsResponse.json()
+        const foundPost = postsData.posts.find((p: any) => p.slug === params.slug)
         
-        // Check if user liked this post
-        const ipAddress = await getUserIP()
-        const likeResponse = await fetch(`/api/likes?postId=${data.post.id}&ipAddress=${ipAddress}`)
-        if (likeResponse.ok) {
-          const likeData = await likeResponse.json()
-          setUserLiked(likeData.userLiked)
+        if (foundPost) {
+          // Then get full post details by ID
+          const response = await fetch(`/api/posts/${foundPost.id}`)
+          if (response.ok) {
+            const data = await response.json()
+            setPost(data.post)
+            setComments(data.post.comments)
+            setLikeCount(data.post._count.likes)
+            
+            // Check if user liked this post
+            const ipAddress = await getUserIP()
+            const likeResponse = await fetch(`/api/likes?postId=${data.post.id}&ipAddress=${ipAddress}`)
+            if (likeResponse.ok) {
+              const likeData = await likeResponse.json()
+              setUserLiked(likeData.userLiked)
+            }
+          }
+        } else {
+          router.push('/')
         }
-      } else {
-        router.push('/')
       }
     } catch (error) {
       console.error('Error fetching post:', error)
@@ -83,20 +93,29 @@ export default function PostDetail() {
 
   const trackPageView = async () => {
     try {
-      const ipAddress = await getUserIP()
-      const userAgent = navigator.userAgent
-      
-      await fetch('/api/analytics', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          postId: params.slug,
-          ipAddress,
-          userAgent,
-        }),
-      })
+      // First find the post by slug to get its ID
+      const postsResponse = await fetch('/api/posts?published=true')
+      if (postsResponse.ok) {
+        const postsData = await postsResponse.json()
+        const foundPost = postsData.posts.find((p: any) => p.slug === params.slug)
+        
+        if (foundPost) {
+          const ipAddress = await getUserIP()
+          const userAgent = navigator.userAgent
+          
+          await fetch('/api/analytics', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              postId: foundPost.id,
+              ipAddress,
+              userAgent,
+            }),
+          })
+        }
+      }
     } catch (error) {
       console.error('Error tracking page view:', error)
     }
