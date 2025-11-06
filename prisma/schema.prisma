@@ -13,20 +13,72 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Post {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  doctorName  String
+  slug        String   @unique
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  comments    Comment[]
+  likes       Like[]
+  analytics   Analytics[]
+  
+  @@map("posts")
 }
 
-model Post {
+model Comment {
   id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
+  postId    String
+  authorName String
+  content   String
+  createdAt DateTime @default(now())
+  
+  // Relations
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  @@map("comments")
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  postId    String
+  ipAddress String
+  userAgent String?
+  createdAt DateTime @default(now())
+  
+  // Relations
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  @@unique([postId, ipAddress])
+  @@map("likes")
+}
+
+model Analytics {
+  id        String   @id @default(cuid())
+  postId    String?
+  date      DateTime @default(now())
+  pageViews Int      @default(0)
+  ipAddress String
+  userAgent String?
+  
+  // Relations
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  @@map("analytics")
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  email     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  @@map("admins")
 }
