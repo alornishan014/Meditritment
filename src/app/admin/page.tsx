@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Credit from "@/components/Credit";
@@ -10,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Plus, 
   BarChart3, 
@@ -38,6 +40,23 @@ interface Post {
   views: number;
 }
 
+interface Comment {
+  id: string;
+  name: string;
+  content: string;
+  createdAt: string;
+  postId: string;
+  postTitle: string;
+  replies?: CommentReply[];
+}
+
+interface CommentReply {
+  id: string;
+  name: string;
+  content: string;
+  createdAt: string;
+}
+
 interface Analytics {
   totalVisitors: number;
   totalPageViews: number;
@@ -51,17 +70,33 @@ interface Analytics {
 }
 
 export default function Admin() {
+  const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [newPost, setNewPost] = useState({
     title: "",
     description: "",
     doctorName: "",
   });
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState("");
+  const [replyName, setReplyName] = useState("Admin");
 
   useEffect(() => {
+    // Check authentication
+    const isLoggedIn = localStorage.getItem("adminLoggedIn") === "true";
+    if (!isLoggedIn) {
+      router.push("/admin-login");
+      return;
+    }
+
     // Simulate API calls
     const mockPosts: Post[] = [
       {
@@ -96,6 +131,41 @@ export default function Admin() {
       },
     ];
 
+    const mockComments: Comment[] = [
+      {
+        id: "1",
+        name: "John Smith",
+        content: "This article provided exactly the information I was looking for. Very helpful!",
+        createdAt: "2024-01-16",
+        postId: "1",
+        postTitle: "Understanding Heart Disease",
+        replies: [
+          {
+            id: "r1",
+            name: "Admin",
+            content: "Thank you for your feedback! We're glad you found the article helpful.",
+            createdAt: "2024-01-16",
+          }
+        ]
+      },
+      {
+        id: "2",
+        name: "Emily Davis",
+        content: "As someone with a family history of heart disease, I found this guide very informative.",
+        createdAt: "2024-01-16",
+        postId: "1",
+        postTitle: "Understanding Heart Disease",
+      },
+      {
+        id: "3",
+        name: "Michael Brown",
+        content: "The section about treatment options was very comprehensive. Thank you!",
+        createdAt: "2024-01-17",
+        postId: "2",
+        postTitle: "Diabetes Management",
+      },
+    ];
+
     const mockAnalytics: Analytics = {
       totalVisitors: 15420,
       totalPageViews: 45630,
@@ -110,10 +180,11 @@ export default function Admin() {
 
     setTimeout(() => {
       setPosts(mockPosts);
+      setComments(mockComments);
       setAnalytics(mockAnalytics);
       setLoading(false);
     }, 1000);
-  }, []);
+  }, [router]);
 
   const handleCreatePost = () => {
     if (!newPost.title || !newPost.description || !newPost.doctorName) return;
@@ -142,7 +213,56 @@ export default function Admin() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("adminLoggedIn");
+    localStorage.removeItem("adminPassword");
+    router.push("/");
+  };
+
+  const handleChangePassword = () => {
+    if (newPassword !== confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
+    if (newPassword.length < 6) {
+      alert("Password must be at least 6 characters long!");
+      return;
+    }
+    
+    localStorage.setItem("adminPassword", newPassword);
+    setNewPassword("");
+    setConfirmPassword("");
+    setShowPasswordDialog(false);
+    alert("Password changed successfully!");
+  };
+
+  const handleEditPost = (post: Post) => {
+    setEditingPost(post);
+    setNewPost({
+      title: post.title,
+      description: post.description,
+      doctorName: post.doctorName,
+    });
+    setShowCreateForm(true);
+  };
+
+  const handleUpdatePost = () => {
+    if (!editingPost || !newPost.title || !newPost.description || !newPost.doctorName) return;
+
+    setPosts(prev => prev.map(post => 
+      post.id === editingPost.id 
+        ? { ...post, title: newPost.title, description: newPost.description, doctorName: newPost.doctorName }
+        : post
+    ));
+
+    setEditingPost(null);
+    setNewPost({ title: "", description: "", doctorName: "" });
+    setShowCreateForm(false);
+  };
+
   const handleDeletePost = (id: string) => {
+    if (!confirm("Are you sure you want to delete this post?")) return;
+    
     setPosts(prev => prev.filter(post => post.id !== id));
     
     // Update analytics
@@ -157,6 +277,29 @@ export default function Admin() {
         } : null);
       }
     }
+  };
+
+  const handleReply = (commentId: string) => {
+    if (!replyContent.trim()) return;
+
+    const reply: CommentReply = {
+      id: `r${Date.now()}`,
+      name: replyName,
+      content: replyContent,
+      createdAt: new Date().toISOString(),
+    };
+
+    setComments(prev => prev.map(comment => 
+      comment.id === commentId 
+        ? { 
+            ...comment, 
+            replies: [...(comment.replies || []), reply] 
+          }
+        : comment
+    ));
+
+    setReplyContent("");
+    setReplyingTo(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -193,11 +336,52 @@ export default function Admin() {
       
       <main className="flex-1">
         <div className="container mx-auto px-4 py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-            <p className="text-muted-foreground">
-              Manage your medical content and view analytics
-            </p>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
+              <p className="text-muted-foreground">
+                Manage your medical content and view analytics
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <Key className="w-4 h-4 mr-2" />
+                    Change Password
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Change Admin Password</DialogTitle>
+                    <DialogDescription>
+                      Enter your new password below. Make sure it's secure!
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <Input
+                      type="password"
+                      placeholder="New Password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                    />
+                    <Input
+                      type="password"
+                      placeholder="Confirm New Password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                    <Button onClick={handleChangePassword} className="w-full">
+                      Update Password
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              <Button variant="outline" onClick={handleLogout}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </Button>
+            </div>
           </div>
 
           {analytics && (
@@ -257,7 +441,7 @@ export default function Admin() {
           )}
 
           <Tabs defaultValue="posts" className="space-y-4">
-            <TabsList>
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="posts">Posts</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
               <TabsTrigger value="comments">Comments</TabsTrigger>
