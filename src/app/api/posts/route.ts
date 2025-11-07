@@ -97,6 +97,17 @@ export async function GET(request: NextRequest) {
 // POST /api/posts - Create a new post
 export async function POST(request: NextRequest) {
   try {
+    // Check if user is authenticated admin
+    const authHeader = request.headers.get('authorization')
+    const isAdmin = await verifyAdminToken(authHeader)
+    
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Admin access required' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     
     // Validate required fields
@@ -123,6 +134,8 @@ export async function POST(request: NextRequest) {
           description: body.description,
           doctorName: body.doctorName,
           slug,
+          tags: body.tags || [],
+          category: body.category || 'General Health',
         },
         include: {
           _count: {
@@ -145,6 +158,8 @@ export async function POST(request: NextRequest) {
         published: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        tags: body.tags ? body.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : [],
+        category: body.category || 'General Health',
         _count: { comments: 0, likes: 0 }
       }
     }
@@ -156,5 +171,36 @@ export async function POST(request: NextRequest) {
       { error: 'Failed to create post' },
       { status: 500 }
     )
+  }
+}
+
+// Admin verification function
+async function verifyAdminToken(authHeader: string | null): Promise<boolean> {
+  // Check if admin is logged in via localStorage (client-side verification)
+  if (!authHeader) {
+    return false
+  }
+  
+  try {
+    // For client-side, we'll use a simple token system
+    // In production, this should use proper JWT or session management
+    const token = authHeader.replace('Bearer ', '')
+    
+    // Check if it's a valid admin session token
+    if (token.startsWith('admin_session_')) {
+      // Verify token format and expiration
+      const sessionData = JSON.parse(atob(token.replace('admin_session_', '')))
+      const now = Date.now()
+      
+      // Check if session is still valid (24 hours)
+      if (sessionData.expiresAt > now) {
+        return true
+      }
+    }
+    
+    return false
+  } catch (error) {
+    console.error('Error verifying admin token:', error)
+    return false
   }
 }

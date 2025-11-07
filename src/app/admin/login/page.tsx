@@ -22,7 +22,29 @@ export default function AdminLogin() {
   useEffect(() => {
     const isAdmin = localStorage.getItem('isAdmin')
     if (isAdmin === 'true') {
-      router.push('/admin/dashboard')
+      // Check if session is still valid
+      const sessionToken = localStorage.getItem('adminSessionToken')
+      if (sessionToken) {
+        try {
+          const sessionData = JSON.parse(atob(sessionToken.replace('admin_session_', '')))
+          const now = Date.now()
+          
+          if (sessionData.expiresAt > now) {
+            router.push('/admin/dashboard')
+            return
+          } else {
+            // Session expired, clear it
+            localStorage.removeItem('adminSessionToken')
+            localStorage.removeItem('isAdmin')
+            localStorage.removeItem('adminLoginTime')
+          }
+        } catch (error) {
+          // Invalid token, clear it
+          localStorage.removeItem('adminSessionToken')
+          localStorage.removeItem('isAdmin')
+          localStorage.removeItem('adminLoginTime')
+        }
+      }
     }
   }, [router])
 
@@ -36,8 +58,19 @@ export default function AdminLogin() {
 
     // Check password (hardcoded for client-side only)
     if (password === 'Ra095213@#') {
+      // Create session token
+      const sessionData = {
+        loginTime: Date.now(),
+        expiresAt: Date.now() + (24 * 60 * 60 * 1000), // 24 hours
+        sessionId: Math.random().toString(36).substring(2, 15)
+      }
+      
+      const sessionToken = 'admin_session_' + btoa(JSON.stringify(sessionData))
+      
       localStorage.setItem('isAdmin', 'true')
       localStorage.setItem('adminLoginTime', new Date().toISOString())
+      localStorage.setItem('adminSessionToken', sessionToken)
+      
       router.push('/admin/dashboard')
     } else {
       setError('Invalid password. Please try again.')

@@ -87,13 +87,38 @@ export default function AdminDashboard() {
     authorName: 'Admin'
   })
 
-  // Check authentication
+  // Check authentication on component mount
   useEffect(() => {
     const isAdmin = localStorage.getItem('isAdmin')
-    if (isAdmin !== 'true') {
+    const sessionToken = localStorage.getItem('adminSessionToken')
+    
+    if (isAdmin !== 'true' || !sessionToken) {
       router.push('/admin/login')
       return
     }
+    
+    // Verify session is still valid
+    try {
+      const sessionData = JSON.parse(atob(sessionToken.replace('admin_session_', '')))
+      const now = Date.now()
+      
+      if (sessionData.expiresAt <= now) {
+        // Session expired
+        localStorage.removeItem('isAdmin')
+        localStorage.removeItem('adminLoginTime')
+        localStorage.removeItem('adminSessionToken')
+        router.push('/admin/login')
+        return
+      }
+    } catch (error) {
+      // Invalid session
+      localStorage.removeItem('isAdmin')
+      localStorage.removeItem('adminLoginTime')
+      localStorage.removeItem('adminSessionToken')
+      router.push('/admin/login')
+      return
+    }
+    
     fetchData()
   }, [router])
 
@@ -236,18 +261,30 @@ export default function AdminDashboard() {
   const handleLogout = () => {
     localStorage.removeItem('isAdmin')
     localStorage.removeItem('adminLoginTime')
+    localStorage.removeItem('adminSessionToken')
     router.push('/admin/login')
   }
 
   const handleCreatePost = async () => {
     try {
+      // Verify admin is still logged in
+      const isAdmin = localStorage.getItem('isAdmin')
+      if (isAdmin !== 'true') {
+        alert('You are not authorized to create posts. Please login again.')
+        router.push('/admin/login')
+        return
+      }
+
       // Try API first, fallback to client data
       let post = null
       try {
+        // Get admin session token
+        const sessionToken = localStorage.getItem('adminSessionToken')
         const response = await fetch('/api/posts', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionToken}`,
           },
           body: JSON.stringify(formData),
         })
@@ -260,7 +297,7 @@ export default function AdminDashboard() {
         }
       } catch (apiError) {
         console.log('API not available, using client data')
-        // Create post in client storage
+        // Create post in client storage (only if admin is logged in)
         const posts = getClientPosts()
         const tagsArray = formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
         const newPost = {
@@ -286,6 +323,7 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('Error creating post:', error)
+      alert('Failed to create post. Please try again.')
     }
   }
 
@@ -293,13 +331,24 @@ export default function AdminDashboard() {
     if (!editingPost) return
 
     try {
+      // Verify admin is still logged in
+      const isAdmin = localStorage.getItem('isAdmin')
+      if (isAdmin !== 'true') {
+        alert('You are not authorized to update posts. Please login again.')
+        router.push('/admin/login')
+        return
+      }
+
       // Try API first, fallback to client data
       let success = false
       try {
+        // Get admin session token
+        const sessionToken = localStorage.getItem('adminSessionToken')
         const response = await fetch(`/api/posts/${editingPost.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionToken}`,
           },
           body: JSON.stringify(formData),
         })
@@ -311,7 +360,7 @@ export default function AdminDashboard() {
         }
       } catch (apiError) {
         console.log('API not available, using client data')
-        // Update post in client storage
+        // Update post in client storage (only if admin is logged in)
         const updatedPost = updateClientPost(editingPost.id, formData)
         if (updatedPost) {
           success = true
@@ -325,18 +374,30 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('Error updating post:', error)
+      alert('Failed to update post. Please try again.')
     }
   }
 
   const handleTogglePublish = async (post: Post) => {
     try {
+      // Verify admin is still logged in
+      const isAdmin = localStorage.getItem('isAdmin')
+      if (isAdmin !== 'true') {
+        alert('You are not authorized to modify posts. Please login again.')
+        router.push('/admin/login')
+        return
+      }
+
       // Try API first, fallback to client data
       let success = false
       try {
+        // Get admin session token
+        const sessionToken = localStorage.getItem('adminSessionToken')
         const response = await fetch(`/api/posts/${post.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionToken}`,
           },
           body: JSON.stringify({ published: !post.published }),
         })
@@ -348,7 +409,7 @@ export default function AdminDashboard() {
         }
       } catch (apiError) {
         console.log('API not available, using client data')
-        // Update post in client storage
+        // Update post in client storage (only if admin is logged in)
         const posts = getClientPosts()
         const postIndex = posts.findIndex(p => p.id === post.id)
         if (postIndex !== -1) {
@@ -364,6 +425,7 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('Error toggling publish status:', error)
+      alert('Failed to update post status. Please try again.')
     }
   }
 
@@ -371,11 +433,24 @@ export default function AdminDashboard() {
     if (!confirm('Are you sure you want to delete this post?')) return
 
     try {
+      // Verify admin is still logged in
+      const isAdmin = localStorage.getItem('isAdmin')
+      if (isAdmin !== 'true') {
+        alert('You are not authorized to delete posts. Please login again.')
+        router.push('/admin/login')
+        return
+      }
+
       // Try API first, fallback to client data
       let success = false
       try {
+        // Get admin session token
+        const sessionToken = localStorage.getItem('adminSessionToken')
         const response = await fetch(`/api/posts/${postId}`, {
           method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${sessionToken}`,
+          },
         })
 
         if (response.ok) {
@@ -385,7 +460,7 @@ export default function AdminDashboard() {
         }
       } catch (apiError) {
         console.log('API not available, using client data')
-        // Delete post from client storage
+        // Delete post from client storage (only if admin is logged in)
         const posts = getClientPosts()
         const filteredPosts = posts.filter(p => p.id !== postId)
         localStorage.setItem('meditritment_posts', JSON.stringify(filteredPosts))
@@ -403,6 +478,7 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('Error deleting post:', error)
+      alert('Failed to delete post. Please try again.')
     }
   }
 
