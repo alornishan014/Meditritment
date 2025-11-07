@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { Search, Menu, X, Heart, MessageCircle, Share2 } from 'lucide-react'
+import { Search, Menu, X, Heart, MessageCircle, Share2, Shield } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -38,6 +38,7 @@ export default function Header() {
     { name: 'Privacy Policy', href: '/privacy' },
     { name: 'Terms', href: '/terms' },
     { name: 'Contact', href: '/contact' },
+    { name: 'Admin Login', href: '/admin/login', icon: Shield },
   ]
 
   return (
@@ -58,9 +59,12 @@ export default function Header() {
               <Link
                 key={item.name}
                 href={item.href}
-                className="text-gray-700 hover:text-blue-600 transition-colors"
+                className={`text-gray-700 hover:text-blue-600 transition-colors flex items-center space-x-1 ${
+                  item.name === 'Admin Login' ? 'bg-blue-50 px-3 py-1 rounded-lg' : ''
+                }`}
               >
-                {item.name}
+                {item.icon && <item.icon className="w-4 h-4" />}
+                <span>{item.name}</span>
               </Link>
             ))}
           </nav>
@@ -118,10 +122,13 @@ export default function Header() {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-1"
+                  className={`text-gray-700 hover:text-blue-600 transition-colors px-2 py-1 flex items-center space-x-2 ${
+                    item.name === 'Admin Login' ? 'bg-blue-50 rounded-lg' : ''
+                  }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  {item.name}
+                  {item.icon && <item.icon className="w-4 h-4" />}
+                  <span>{item.name}</span>
                 </Link>
               ))}
               
