@@ -21,7 +21,10 @@ import {
   Calendar,
   Edit,
   Trash2,
-  Save
+  Save,
+  LogOut,
+  Reply,
+  Key
 } from "lucide-react";
 
 interface Post {
@@ -308,11 +311,15 @@ export default function Admin() {
                       </p>
                     </div>
                     <div className="flex gap-2">
-                      <Button onClick={handleCreatePost}>
+                      <Button onClick={editingPost ? handleUpdatePost : handleCreatePost}>
                         <Save className="w-4 h-4 mr-2" />
-                        Publish Post
+                        {editingPost ? "Update Post" : "Publish Post"}
                       </Button>
-                      <Button variant="outline" onClick={() => setShowCreateForm(false)}>
+                      <Button variant="outline" onClick={() => {
+                        setShowCreateForm(false);
+                        setEditingPost(null);
+                        setNewPost({ title: "", description: "", doctorName: "" });
+                      }}>
                         Cancel
                       </Button>
                     </div>
@@ -324,15 +331,15 @@ export default function Admin() {
                 {posts.map((post) => (
                   <Card key={post.id}>
                     <CardHeader>
-                      <div className="flex justify-between items-start">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
                         <div className="flex-1">
-                          <CardTitle className="text-lg">{post.title}</CardTitle>
+                          <CardTitle className="text-lg leading-tight">{post.title}</CardTitle>
                           <CardDescription>
                             Dr. {post.doctorName} • {formatDate(post.createdAt)}
                           </CardDescription>
                         </div>
                         <div className="flex gap-2">
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" onClick={() => handleEditPost(post)}>
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button 
@@ -349,7 +356,7 @@ export default function Admin() {
                       <p className="text-muted-foreground mb-4 line-clamp-2">
                         {post.description}
                       </p>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center">
                           <Eye className="w-4 h-4 mr-1" />
                           {post.views} views
@@ -373,7 +380,7 @@ export default function Admin() {
               <h2 className="text-2xl font-bold">Analytics Overview</h2>
               
               {analytics && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
                   <Card>
                     <CardHeader>
                       <CardTitle>Visitor Statistics</CardTitle>
@@ -464,53 +471,86 @@ export default function Admin() {
             </TabsContent>
 
             <TabsContent value="comments" className="space-y-4">
-              <h2 className="text-2xl font-bold">Recent Comments</h2>
+              <h2 className="text-2xl font-bold">Manage Comments</h2>
               
               <div className="space-y-4">
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h4 className="font-semibold">John Smith</h4>
-                        <p className="text-sm text-muted-foreground">on "Understanding Heart Disease"</p>
+                {comments.map((comment) => (
+                  <Card key={comment.id}>
+                    <CardContent className="p-4">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
+                        <div>
+                          <h4 className="font-semibold">{comment.name}</h4>
+                          <p className="text-sm text-muted-foreground">on "{comment.postTitle}"</p>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">
+                          {formatDate(comment.createdAt)}
+                        </Badge>
                       </div>
-                      <Badge variant="secondary">2 hours ago</Badge>
-                    </div>
-                    <p className="text-muted-foreground">
-                      This article provided exactly the information I was looking for. Very helpful!
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h4 className="font-semibold">Emily Davis</h4>
-                        <p className="text-sm text-muted-foreground">on "Understanding Heart Disease"</p>
-                      </div>
-                      <Badge variant="secondary">5 hours ago</Badge>
-                    </div>
-                    <p className="text-muted-foreground">
-                      As someone with a family history of heart disease, I found this guide very informative.
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h4 className="font-semibold">Michael Brown</h4>
-                        <p className="text-sm text-muted-foreground">on "Diabetes Management"</p>
-                      </div>
-                      <Badge variant="secondary">1 day ago</Badge>
-                    </div>
-                    <p className="text-muted-foreground">
-                      The section about treatment options was very comprehensive. Thank you!
-                    </p>
-                  </CardContent>
-                </Card>
+                      <p className="text-muted-foreground mb-4">{comment.content}</p>
+                      
+                      {/* Admin Replies */}
+                      {comment.replies && comment.replies.length > 0 && (
+                        <div className="ml-0 sm:ml-4 space-y-2 mb-4">
+                          {comment.replies.map((reply) => (
+                            <div key={reply.id} className="bg-muted p-3 rounded-md">
+                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 mb-1">
+                                <span className="font-semibold text-sm">{reply.name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {formatDate(reply.createdAt)}
+                                </span>
+                              </div>
+                              <p className="text-sm">{reply.content}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Reply Form */}
+                      {replyingTo === comment.id ? (
+                        <div className="space-y-2">
+                          <Input
+                            placeholder="Your name (default: Admin)"
+                            value={replyName}
+                            onChange={(e) => setReplyName(e.target.value)}
+                            className="text-sm"
+                          />
+                          <Textarea
+                            placeholder="Write your reply..."
+                            value={replyContent}
+                            onChange={(e) => setReplyContent(e.target.value)}
+                            rows={3}
+                            className="text-sm"
+                          />
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <Button size="sm" onClick={() => handleReply(comment.id)}>
+                              <Reply className="w-4 h-4 mr-1" />
+                              Post Reply
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => {
+                                setReplyingTo(null);
+                                setReplyContent("");
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => setReplyingTo(comment.id)}
+                        >
+                          <Reply className="w-4 h-4 mr-1" />
+                          Reply
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </TabsContent>
           </Tabs>

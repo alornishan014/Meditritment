@@ -14,7 +14,7 @@ export default function Credit() {
             </span>
           </div>
           
-          <div className="flex items-center space-x-4 text-sm">
+          <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 text-sm">
             <Link 
               href="/privacy-policy" 
               className="text-primary-foreground/80 hover:text-accent transition-colors"

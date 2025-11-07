@@ -40,26 +40,29 @@ export default function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link href="/" className="hover:text-accent transition-colors">
+          <nav className="hidden md:flex items-center space-x-4 lg:space-x-6">
+            <Link href="/" className="hover:text-accent transition-colors text-sm lg:text-base">
               Home
             </Link>
-            <Link href="/about" className="hover:text-accent transition-colors">
+            <Link href="/about" className="hover:text-accent transition-colors text-sm lg:text-base">
               About
             </Link>
-            <Link href="/privacy-policy" className="hover:text-accent transition-colors">
+            <Link href="/privacy-policy" className="hover:text-accent transition-colors text-sm lg:text-base">
               Privacy Policy
             </Link>
-            <Link href="/terms" className="hover:text-accent transition-colors">
+            <Link href="/terms" className="hover:text-accent transition-colors text-sm lg:text-base">
               Terms
             </Link>
-            <Link href="/contact" className="hover:text-accent transition-colors">
+            <Link href="/contact" className="hover:text-accent transition-colors text-sm lg:text-base">
               Contact
+            </Link>
+            <Link href="/admin-login" className="bg-accent text-primary px-3 py-1 rounded-md text-sm font-medium hover:bg-accent/90 transition-colors">
+              Admin Login
             </Link>
           </nav>
 
           {/* Search Bar */}
-          <div className="hidden md:flex items-center space-x-2">
+          <div className="hidden lg:flex items-center space-x-2">
             <div className="relative">
               <form onSubmit={handleSearch} className="flex items-center">
                 <Input
@@ -72,7 +75,7 @@ export default function Header() {
                   }}
                   onFocus={() => setShowSearchSuggestions(searchQuery.length > 0)}
                   onBlur={() => setTimeout(() => setShowSearchSuggestions(false), 200)}
-                  className="w-64 bg-primary-foreground text-primary placeholder:text-primary/60"
+                  className="w-48 lg:w-64 bg-primary-foreground text-primary placeholder:text-primary/60"
                 />
                 <Button type="submit" size="sm" className="ml-2 bg-accent text-primary hover:bg-accent/90">
                   <Search className="w-4 h-4" />
@@ -148,6 +151,13 @@ export default function Header() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Contact
+              </Link>
+              <Link
+                href="/admin-login"
+                className="block px-3 py-2 bg-accent text-primary rounded-md hover:bg-accent/90"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Admin Login
               </Link>
               
               {/* Mobile Search */}

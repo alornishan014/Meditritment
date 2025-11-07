@@ -212,15 +212,15 @@ export default function PostDetail() {
 
           {/* Article Header */}
           <div className="max-w-4xl mx-auto mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <Badge variant="secondary">Medical Article</Badge>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <Badge variant="secondary" className="text-xs w-fit">Medical Article</Badge>
               <div className="flex items-center text-sm text-muted-foreground">
                 <Clock className="w-4 h-4 mr-1" />
                 {formatDate(post.createdAt)}
               </div>
             </div>
             
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">{post.title}</h1>
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 leading-tight">{post.title}</h1>
             
             <div className="flex items-center text-muted-foreground mb-6">
               <User className="w-4 h-4 mr-2" />
@@ -228,7 +228,7 @@ export default function PostDetail() {
             </div>
 
             {/* Engagement Buttons */}
-            <div className="flex items-center gap-4 mb-8">
+            <div className="flex flex-wrap items-center gap-3 mb-8">
               <Button
                 variant={liked ? "default" : "outline"}
                 size="sm"
@@ -254,10 +254,10 @@ export default function PostDetail() {
           {/* Article Content */}
           <div className="max-w-4xl mx-auto mb-12">
             <Card>
-              <CardContent className="p-8">
-                <div className="prose prose-lg max-w-none">
+              <CardContent className="p-4 md:p-8">
+                <div className="prose prose-sm md:prose-base lg:prose-lg max-w-none">
                   {post.description.split('\n\n').map((paragraph, index) => (
-                    <p key={index} className="mb-4 text-base leading-relaxed">
+                    <p key={index} className="mb-4 text-base md:text-lg leading-relaxed">
                       {paragraph}
                     </p>
                   ))}
@@ -268,7 +268,7 @@ export default function PostDetail() {
 
           {/* Comments Section */}
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold mb-6">Comments ({post.comments})</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-6">Comments ({post.comments})</h2>
             
             {/* Comment Form */}
             <Card className="mb-8">
@@ -294,7 +294,7 @@ export default function PostDetail() {
                       required
                     />
                   </div>
-                  <Button type="submit" disabled={submittingComment}>
+                  <Button type="submit" disabled={submittingComment} className="w-full sm:w-auto">
                     <Send className="w-4 h-4 mr-2" />
                     {submittingComment ? 'Posting...' : 'Post Comment'}
                   </Button>
@@ -307,7 +307,7 @@ export default function PostDetail() {
               {comments.map((comment) => (
                 <Card key={comment.id}>
                   <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
                       <div className="font-semibold">{comment.name}</div>
                       <div className="text-sm text-muted-foreground">
                         {formatDate(comment.createdAt)}

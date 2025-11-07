@@ -131,14 +131,14 @@ export default function Home() {
         <section className="py-16">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Latest Medical Insights</h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4">Latest Medical Insights</h2>
+              <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
                 Stay informed with the latest medical research, treatment options, and health tips from our team of experienced healthcare professionals.
               </p>
             </div>
 
             {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {[...Array(6)].map((_, index) => (
                   <Card key={index} className="animate-pulse">
                     <CardHeader>
@@ -156,12 +156,12 @@ export default function Home() {
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {posts.map((post) => (
-                  <Card key={post.id} className="hover:shadow-lg transition-shadow duration-300">
-                    <CardHeader>
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge variant="secondary" className="text-xs">
+                  <Card key={post.id} className="hover:shadow-lg transition-shadow duration-300 h-full flex flex-col">
+                    <CardHeader className="flex-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                        <Badge variant="secondary" className="text-xs w-fit">
                           Medical Article
                         </Badge>
                         <div className="flex items-center text-sm text-muted-foreground">
@@ -169,7 +169,7 @@ export default function Home() {
                           {formatDate(post.createdAt)}
                         </div>
                       </div>
-                      <CardTitle className="text-xl leading-tight">
+                      <CardTitle className="text-lg md:text-xl leading-tight line-clamp-2">
                         {post.title}
                       </CardTitle>
                       <CardDescription className="flex items-center text-sm">
@@ -177,12 +177,12 @@ export default function Home() {
                         Dr. {post.doctorName}
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground mb-4 line-clamp-3">
+                    <CardContent className="pt-0">
+                      <p className="text-muted-foreground mb-4 line-clamp-3 text-sm">
                         {post.description}
                       </p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <div className="flex items-center">
                             <Heart className="w-4 h-4 mr-1" />
                             {post.likes}
@@ -192,8 +192,8 @@ export default function Home() {
                             {post.comments}
                           </div>
                         </div>
-                        <Link href={`/post/${post.id}`}>
-                          <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
+                        <Link href={`/post/${post.id}`} className="w-full sm:w-auto">
+                          <Button size="sm" className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
                             Read More
                           </Button>
                         </Link>

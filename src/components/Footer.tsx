@@ -7,7 +7,7 @@ export default function Footer() {
   return (
     <footer className="bg-primary text-primary-foreground mt-16">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand Section */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
@@ -86,10 +86,10 @@ export default function Footer() {
         {/* Bottom Border */}
         <div className="border-t border-primary-foreground/20 mt-8 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-primary-foreground/60 text-sm">
+            <p className="text-primary-foreground/60 text-sm mb-4 md:mb-0">
               © 2025 Medi Treatment. All rights reserved.
             </p>
-            <div className="flex items-center space-x-4 mt-4 md:mt-0">
+            <div className="flex items-center space-x-4">
               <span className="text-primary-foreground/60 text-sm">
                 Made with <Heart className="w-4 h-4 inline text-accent" /> for better health
               </span>
