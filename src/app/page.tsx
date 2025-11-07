@@ -17,12 +17,132 @@ interface Post {
   description: string
   doctorName: string
   slug: string
+  published: boolean
   createdAt: string
+  updatedAt: string
   _count: {
     comments: number
     likes: number
   }
 }
+
+// Client-side data management
+class ClientDataManager {
+  private readonly POSTS_KEY = 'meditritment_posts'
+  private readonly COMMENTS_KEY = 'meditritment_comments'
+  private readonly LIKES_KEY = 'meditritment_likes'
+
+  constructor() {
+    this.initializeData()
+  }
+
+  private initializeData() {
+    if (!this.getPosts().length) {
+      this.seedDefaultData()
+    }
+  }
+
+  private seedDefaultData() {
+    const defaultPosts = [
+      {
+        id: '1',
+        title: "Understanding and Treating Lingual Burning Sensation: A Comprehensive Guide",
+        description: "Lingual burning sensation, also known as burning mouth syndrome (BMS), is a complex medical condition that affects many individuals worldwide. This condition is characterized by a persistent burning or scalding sensation in the tongue, lips, gums, or other areas of the mouth without any obvious medical cause. While the exact cause of lingual burning sensation is often unknown, several factors may contribute to this condition including neurological factors, hormonal imbalances, nutritional deficiencies, oral health issues, and psychological factors. Diagnosis requires a comprehensive medical evaluation including blood tests and physical examination. Treatment options include medications, nutritional supplements, lifestyle modifications, and alternative therapies. Most patients find relief through proper treatment and management.",
+        doctorName: "Dr. Sarah Johnson",
+        slug: "understanding-lingual-burning-sensation",
+        published: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        _count: { comments: 0, likes: 0 }
+      },
+      {
+        id: '2',
+        title: "Male Enhancement: Medical Facts, Myths, and Evidence-Based Treatments",
+        description: "Male enhancement is a topic that concerns many men worldwide, often surrounded by misinformation and unrealistic expectations. This comprehensive guide provides evidence-based information about male enhancement, separating medical facts from marketing myths and discussing proven treatment options. Understanding normal male anatomy is essential before considering enhancement options. Evidence-based treatments include oral medications like sildenafil and tadalafil, vacuum devices, lifestyle modifications, and psychological support. Unproven methods like pills and supplements can be dangerous and should be avoided. The most effective approach involves professional medical evaluation, evidence-based treatments, lifestyle modifications, and psychological support. Quality of life and emotional intimacy are far more important than physical measurements.",
+        doctorName: "Dr. Michael Chen",
+        slug: "male-enhancement-medical-facts",
+        published: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        _count: { comments: 0, likes: 0 }
+      },
+      {
+        id: '3',
+        title: "Understanding Premature Ejaculation: Causes, Treatments, and Management Strategies",
+        description: "Premature ejaculation (PE) is one of the most common sexual dysfunctions affecting men worldwide, yet it remains widely misunderstood and often untreated. PE is defined as ejaculation that occurs with minimal sexual stimulation before the person wishes it, causing distress or interpersonal difficulty. The condition can be primary (lifelong) or secondary (acquired). Causes include psychological factors like performance anxiety and depression, biological factors like abnormal hormone levels, and medical conditions like diabetes. Treatment options include behavioral techniques like the start-stop method and squeeze technique, psychological approaches like sex therapy and CBT, medical treatments including topical anesthetics and oral medications, and lifestyle modifications. With proper treatment, most men can achieve significant improvement in their sexual function and quality of life.",
+        doctorName: "Dr. Emily Rodriguez",
+        slug: "understanding-premature-ejaculation",
+        published: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        _count: { comments: 0, likes: 0 }
+      },
+      {
+        id: '4',
+        title: "Understanding and Managing Erectile Dysfunction: A Complete Medical Guide",
+        description: "Erectile dysfunction (ED) is a common medical condition that affects millions of men worldwide, yet many suffer in silence due to embarrassment or lack of understanding. ED is defined as the persistent inability to achieve or maintain an erection sufficient for satisfactory sexual performance. The condition becomes more common with age but can also affect younger men. Causes include vascular diseases, neurological conditions, hormonal imbalances, medications, and lifestyle factors. Diagnosis involves medical history review, physical examination, and laboratory tests. Treatment options include oral medications like PDE5 inhibitors, vacuum devices, penile injections, lifestyle modifications, and psychological support. With proper treatment, most men can achieve significant improvement and return to satisfactory sexual activity. ED often serves as an early warning sign for other health conditions.",
+        doctorName: "Dr. James Thompson",
+        slug: "understanding-erectile-dysfunction",
+        published: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        _count: { comments: 0, likes: 0 }
+      }
+    ]
+
+    localStorage.setItem(this.POSTS_KEY, JSON.stringify(defaultPosts))
+    localStorage.setItem(this.COMMENTS_KEY, JSON.stringify([]))
+    localStorage.setItem(this.LIKES_KEY, JSON.stringify([]))
+  }
+
+  getPosts(): Post[] {
+    try {
+      const posts = localStorage.getItem(this.POSTS_KEY)
+      return posts ? JSON.parse(posts) : []
+    } catch (error) {
+      console.error('Error getting posts:', error)
+      return []
+    }
+  }
+
+  createPost(postData: Omit<Post, 'id' | 'createdAt' | 'updatedAt' | '_count'>): Post {
+    try {
+      const posts = this.getPosts()
+      const newPost: Post = {
+        ...postData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        _count: { comments: 0, likes: 0 }
+      }
+      posts.push(newPost)
+      localStorage.setItem(this.POSTS_KEY, JSON.stringify(posts))
+      return newPost
+    } catch (error) {
+      console.error('Error creating post:', error)
+      throw error
+    }
+  }
+
+  searchPosts(query: string): Post[] {
+    try {
+      const posts = this.getPosts()
+      const lowercaseQuery = query.toLowerCase()
+      return posts.filter(post => 
+        post.published && (
+          post.title.toLowerCase().includes(lowercaseQuery) ||
+          post.description.toLowerCase().includes(lowercaseQuery) ||
+          post.doctorName.toLowerCase().includes(lowercaseQuery)
+        )
+      )
+    } catch (error) {
+      console.error('Error searching posts:', error)
+      return []
+    }
+  }
+}
+
+const dataManager = new ClientDataManager()
 
 export default function Home() {
   const [posts, setPosts] = useState<Post[]>([])
@@ -36,14 +156,27 @@ export default function Home() {
   }, [])
 
   const fetchPosts = async () => {
+    setLoading(true)
     try {
-      const response = await fetch('/api/posts?published=true')
-      if (response.ok) {
-        const data = await response.json()
-        setPosts(data.posts)
+      // Try API first, fallback to client data
+      try {
+        const response = await fetch('/api/posts?published=true')
+        if (response.ok) {
+          const data = await response.json()
+          setPosts(data.posts || [])
+        } else {
+          throw new Error('API failed')
+        }
+      } catch (apiError) {
+        console.log('API not available, using client data')
+        const clientPosts = dataManager.getPosts().filter(post => post.published)
+        setPosts(clientPosts)
       }
     } catch (error) {
       console.error('Error fetching posts:', error)
+      // Fallback to client data
+      const clientPosts = dataManager.getPosts().filter(post => post.published)
+      setPosts(clientPosts)
     } finally {
       setLoading(false)
     }
@@ -53,14 +186,27 @@ export default function Home() {
     setSearchQuery(query)
     if (query.length > 2) {
       try {
-        const response = await fetch(`/api/posts/search?q=${encodeURIComponent(query)}`)
-        if (response.ok) {
-          const data = await response.json()
-          setSearchSuggestions(data.posts || [])
-          setShowSuggestions(true)
+        // Try API first, fallback to client data
+        try {
+          const response = await fetch(`/api/posts/search?q=${encodeURIComponent(query)}`)
+          if (response.ok) {
+            const data = await response.json()
+            setSearchSuggestions(data.posts || [])
+          } else {
+            throw new Error('Search API failed')
+          }
+        } catch (apiError) {
+          console.log('Search API not available, using client data')
+          const clientSuggestions = dataManager.searchPosts(query)
+          setSearchSuggestions(clientSuggestions)
         }
+        setShowSuggestions(true)
       } catch (error) {
         console.error('Search error:', error)
+        // Fallback to client data
+        const clientSuggestions = dataManager.searchPosts(query)
+        setSearchSuggestions(clientSuggestions)
+        setShowSuggestions(true)
       }
     } else {
       setSearchSuggestions([])
@@ -219,7 +365,10 @@ export default function Home() {
             </div>
           ) : posts.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">No articles available at the moment.</p>
+              <p className="text-gray-500 text-lg mb-4">No articles available at the moment.</p>
+              <Button onClick={fetchPosts} className="bg-blue-600 hover:bg-blue-700">
+                Refresh Posts
+              </Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

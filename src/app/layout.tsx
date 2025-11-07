@@ -75,6 +75,8 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://meditritment.com',
   },
+  app_name: 'Meditritment',
+  applicationName: 'Meditritment',
 };
 
 export default function RootLayout({
