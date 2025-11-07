@@ -30,6 +30,8 @@ interface Post {
   published: boolean
   createdAt: string
   updatedAt: string
+  tags: string[]
+  category: string
   _count: {
     comments: number
     likes: number
@@ -72,6 +74,8 @@ export default function AdminDashboard() {
     title: '',
     description: '',
     doctorName: '',
+    tags: '',
+    category: '',
   })
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -167,6 +171,27 @@ export default function AdminDashboard() {
     }
   }
 
+  const updateClientPost = (postId: string, updates: any) => {
+    try {
+      const posts = getClientPosts()
+      const postIndex = posts.findIndex(p => p.id === postId)
+      if (postIndex !== -1) {
+        posts[postIndex] = {
+          ...posts[postIndex],
+          ...updates,
+          updatedAt: new Date().toISOString(),
+          tags: updates.tags ? updates.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : posts[postIndex].tags
+        }
+        localStorage.setItem('meditritment_posts', JSON.stringify(posts))
+        return posts[postIndex]
+      }
+      return null
+    } catch (error) {
+      console.error('Error updating client post:', error)
+      return null
+    }
+  }
+
   const getClientComments = () => {
     try {
       const comments = localStorage.getItem('meditritment_comments')
@@ -237,6 +262,7 @@ export default function AdminDashboard() {
         console.log('API not available, using client data')
         // Create post in client storage
         const posts = getClientPosts()
+        const tagsArray = formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
         const newPost = {
           ...formData,
           id: Date.now().toString(),
@@ -244,6 +270,8 @@ export default function AdminDashboard() {
           published: true,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          tags: tagsArray,
+          category: formData.category,
           _count: { comments: 0, likes: 0 }
         }
         posts.push(newPost)
@@ -254,7 +282,7 @@ export default function AdminDashboard() {
       if (post) {
         await fetchData()
         setIsCreateDialogOpen(false)
-        setFormData({ title: '', description: '', doctorName: '' })
+        setFormData({ title: '', description: '', doctorName: '', tags: '', category: '' })
       }
     } catch (error) {
       console.error('Error creating post:', error)
@@ -284,15 +312,8 @@ export default function AdminDashboard() {
       } catch (apiError) {
         console.log('API not available, using client data')
         // Update post in client storage
-        const posts = getClientPosts()
-        const postIndex = posts.findIndex(p => p.id === editingPost.id)
-        if (postIndex !== -1) {
-          posts[postIndex] = {
-            ...posts[postIndex],
-            ...formData,
-            updatedAt: new Date().toISOString()
-          }
-          localStorage.setItem('meditritment_posts', JSON.stringify(posts))
+        const updatedPost = updateClientPost(editingPost.id, formData)
+        if (updatedPost) {
           success = true
         }
       }
@@ -300,7 +321,7 @@ export default function AdminDashboard() {
       if (success) {
         await fetchData()
         setEditingPost(null)
-        setFormData({ title: '', description: '', doctorName: '' })
+        setFormData({ title: '', description: '', doctorName: '', tags: '', category: '' })
       }
     } catch (error) {
       console.error('Error updating post:', error)
@@ -430,6 +451,8 @@ export default function AdminDashboard() {
       title: post.title,
       description: post.description,
       doctorName: post.doctorName,
+      tags: post.tags.join(', '),
+      category: post.category,
     })
   }
 
@@ -894,17 +917,49 @@ export default function AdminDashboard() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Description (max 10,000 characters)
+                      Category
+                    </label>
+                    <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Men's Health">Men's Health</SelectItem>
+                        <SelectItem value="Women's Health">Women's Health</SelectItem>
+                        <SelectItem value="Sexual Health">Sexual Health</SelectItem>
+                        <SelectItem value="Oral Health">Oral Health</SelectItem>
+                        <SelectItem value="Mental Health">Mental Health</SelectItem>
+                        <SelectItem value="General Health">General Health</SelectItem>
+                        <SelectItem value="Pediatrics">Pediatrics</SelectItem>
+                        <SelectItem value="Cardiology">Cardiology</SelectItem>
+                        <SelectItem value="Dermatology">Dermatology</SelectItem>
+                        <SelectItem value="Neurology">Neurology</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tags (comma separated)
+                    </label>
+                    <Input
+                      value={formData.tags}
+                      onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                      placeholder="e.g., treatment, therapy, medical"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Description (max 1000 characters)
                     </label>
                     <Textarea
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       placeholder="Enter post description"
                       rows={10}
-                      maxLength={10000}
+                      maxLength={1000}
                     />
                     <div className="text-sm text-gray-500 mt-1">
-                      {formData.description.length}/10,000 characters
+                      {formData.description.length}/1000 characters
                     </div>
                   </div>
                   <Button onClick={handleCreatePost} className="w-full">
@@ -945,17 +1000,49 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description (max 10,000 characters)
+                  Category
+                </label>
+                <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Men's Health">Men's Health</SelectItem>
+                    <SelectItem value="Women's Health">Women's Health</SelectItem>
+                    <SelectItem value="Sexual Health">Sexual Health</SelectItem>
+                    <SelectItem value="Oral Health">Oral Health</SelectItem>
+                    <SelectItem value="Mental Health">Mental Health</SelectItem>
+                    <SelectItem value="General Health">General Health</SelectItem>
+                    <SelectItem value="Pediatrics">Pediatrics</SelectItem>
+                    <SelectItem value="Cardiology">Cardiology</SelectItem>
+                    <SelectItem value="Dermatology">Dermatology</SelectItem>
+                    <SelectItem value="Neurology">Neurology</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tags (comma separated)
+                </label>
+                <Input
+                  value={formData.tags}
+                  onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                  placeholder="e.g., treatment, therapy, medical"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description (max 1000 characters)
                 </label>
                 <Textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Enter post description"
                   rows={10}
-                  maxLength={10000}
+                  maxLength={1000}
                 />
                 <div className="text-sm text-gray-500 mt-1">
-                  {formData.description.length}/10,000 characters
+                  {formData.description.length}/1000 characters
                 </div>
               </div>
               <div className="flex gap-2">

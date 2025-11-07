@@ -20,6 +20,8 @@ interface Post {
   published: boolean
   createdAt: string
   updatedAt: string
+  tags: string[]
+  category: string
   _count: {
     comments: number
     likes: number
@@ -53,6 +55,8 @@ class ClientDataManager {
         published: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        tags: ["oral health", "burning sensation", "neurological", "treatment"],
+        category: "Oral Health",
         _count: { comments: 0, likes: 0 }
       },
       {
@@ -64,6 +68,8 @@ class ClientDataManager {
         published: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        tags: ["male health", "enhancement", "treatment", "medical facts"],
+        category: "Men's Health",
         _count: { comments: 0, likes: 0 }
       },
       {
@@ -75,6 +81,8 @@ class ClientDataManager {
         published: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        tags: ["sexual health", "premature ejaculation", "treatment", "therapy"],
+        category: "Sexual Health",
         _count: { comments: 0, likes: 0 }
       },
       {
@@ -86,6 +94,8 @@ class ClientDataManager {
         published: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        tags: ["erectile dysfunction", "men's health", "treatment", "medication"],
+        category: "Men's Health",
         _count: { comments: 0, likes: 0 }
       }
     ]
@@ -383,6 +393,16 @@ export default function Home() {
                         <Calendar className="w-4 h-4 mr-1" />
                         {new Date(post.createdAt).toLocaleDateString()}
                       </div>
+                    </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="outline" className="text-xs">
+                        {post.category}
+                      </Badge>
+                      {post.tags.slice(0, 2).map((tag, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
                     </div>
                     <CardTitle className="text-xl text-gray-900 hover:text-blue-600 transition-colors">
                       <Link href={`/post/${post.slug}`}>
